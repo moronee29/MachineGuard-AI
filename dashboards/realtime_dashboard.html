@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Predictive Maintenance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            padding: 20px;
+            color: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .chart-container {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-container h3 {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #ecf0f1;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(26, 26, 46, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            margin: 5px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+
+        .status.running {
+            background: #11998e;
+        }
+
+        .status.stopped {
+            background: #e74c3c;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>⚡ Real-Time Predictive Maintenance Dashboard</h1>
+    </div>
+
+    <div class="controls">
+        <button onclick="startSimulation()" id="startBtn">▶️ Start Simulation</button>
+        <button onclick="stopSimulation()" id="stopBtn" disabled>⏸️ Stop</button>
+        <button onclick="resetSimulation()" id="resetBtn">🔄 Reset</button>
+        <span class="status stopped" id="status">STOPPED</span>
+    </div>
+
+    <div class="dashboard">
+        <div class="chart-container">
+            <h3>Real-Time Failure Probability</h3>
+            <div class="chart-wrapper">
+                <canvas id="probabilityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Vibration Sensor Reading</h3>
+            <div class="chart-wrapper">
+                <canvas id="vibrationChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Temperature Sensor Reading</h3>
+            <div class="chart-wrapper">
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Pressure Sensor Reading</h3>
+            <div class="chart-wrapper">
+                <canvas id="pressureChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Prediction Timeline (Green=Normal, Red=Failure)</h3>
+            <div class="chart-wrapper">
+                <canvas id="predictionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Machine Health Degradation</h3>
+            <div class="chart-wrapper">
+                <canvas id="degradationChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation state
+        let isRunning = false;
+        let simulationInterval = null;
+        let timeStep = 0;
+        const maxDataPoints = 30;
+
+        // Degradation factor (machine gets worse over time)
+        let degradationFactor = 0;
+
+        // Initialize data arrays
+        const timeData = [];
+        const vibrationData = [];
+        const temperatureData = [];
+        const pressureData = [];
+        const probabilityData = [];
+        const predictionData = [];
+        const degradationData = [];
+
+        // Chart configurations
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 500
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: 'white' },
+                    title: { display: true, text: 'Time (seconds)', color: 'white' }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: 'white' }
+                }
+            }
+        };
+
+        // Create charts
+        const probabilityChart = new Chart(document.getElementById('probabilityChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Failure Probability',
+                    data: probabilityData,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'High Risk Threshold',
+                    data: Array(maxDataPoints).fill(0.7),
+                    borderColor: '#c0392b',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0
+                }, {
+                    label: 'Alert Zone',
+                    data: Array(maxDataPoints).fill(0.7),
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    borderWidth: 0,
+                    fill: 'origin'
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, min: 0, max: 1 }
+                }
+            }
+        });
+
+        const vibrationChart = new Chart(document.getElementById('vibrationChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Vibration',
+                    data: vibrationData,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, title: { display: true, text: 'Vibration (mm/s)', color: 'white' } }
+                }
+            }
+        });
+
+        const temperatureChart = new Chart(document.getElementById('temperatureChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Temperature',
+                    data: temperatureData,
+                    borderColor: '#e67e22',
+                    backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, title: { display: true, text: 'Temperature (°C)', color: 'white' } }
+                }
+            }
+        });
+
+        const pressureChart = new Chart(document.getElementById('pressureChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Pressure',
+                    data: pressureData,
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, title: { display: true, text: 'Pressure (bar)', color: 'white' } }
+                }
+            }
+        });
+
+        const predictionChart = new Chart(document.getElementById('predictionChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Prediction',
+                    data: predictionData,
+                    backgroundColor: predictionData.map(d => d.y === 0 ? '#2ecc71' : '#e74c3c'),
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        min: -0.5,
+                        max: 1.5,
+                        ticks: {
+                            ...commonOptions.scales.y.ticks,
+                            stepSize: 1,
+                            callback: function (value) {
+                                return value === 0 ? 'Normal' : value === 1 ? 'Failure' : '';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const degradationChart = new Chart(document.getElementById('degradationChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Degradation Factor',
+                    data: degradationData,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.3)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, min: 0, max: 1 }
+                }
+            }
+        });
+
+        // WebSocket connection for REAL ML predictions
+        let ws = null;
+        let isConnected = false;
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/realtime`;
+
+            console.log('Connecting to:', wsUrl);
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function () {
+                console.log('✓ Connected to ML prediction stream');
+                isConnected = true;
+                document.getElementById('status').textContent = 'CONNECTED (Real ML)';
+                document.getElementById('status').className = 'status running';
+            };
+
+            ws.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                if (data.error) {
+                    console.error('Server error:', data.error);
+                    stopSimulation();
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                // Update charts with real ML prediction data
+                updateChartsWithRealData(data);
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket error:', error);
+                isConnected = false;
+                document.getElementById('status').textContent = 'CONNECTION ERROR';
+                document.getElementById('status').className = 'status stopped';
+            };
+
+            ws.onclose = function () {
+                console.log('WebSocket closed');
+                isConnected = false;
+                if (isRunning) {
+                    document.getElementById('status').textContent = 'DISCONNECTED';
+                    document.getElementById('status').className = 'status stopped';
+                }
+            };
+        }
+
+        function updateChartsWithRealData(data) {
+            // Add new data point
+            timeData.push(data.time);
+            vibrationData.push(data.vibration);
+            temperatureData.push(data.temperature);
+            pressureData.push(data.pressure);
+            probabilityData.push(data.probability);
+            predictionData.push({ x: data.time, y: data.prediction });
+            degradationData.push(data.degradation);
+
+            // Limit data points
+            if (timeData.length > maxDataPoints) {
+                timeData.shift();
+                vibrationData.shift();
+                temperatureData.shift();
+                pressureData.shift();
+                probabilityData.shift();
+                predictionData.shift();
+                degradationData.shift();
+            }
+
+            // Update prediction colors dynamically
+            predictionChart.data.datasets[0].backgroundColor = predictionData.map(d =>
+                d.y === 0 ? '#2ecc71' : '#e74c3c'
+            );
+
+            // Update all charts
+            [probabilityChart, vibrationChart, temperatureChart,
+                pressureChart, predictionChart, degradationChart].forEach(chart => {
+                    chart.update('none');
+                });
+        }
+
+        function startSimulation() {
+            if (isRunning) return;
+
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('status').textContent = 'CONNECTING...';
+            document.getElementById('status').className = 'status running';
+
+            // Connect to WebSocket for real ML predictions
+            connectWebSocket();
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+
+            if (ws && isConnected) {
+                ws.close();
+            }
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('status').textContent = 'STOPPED';
+            document.getElementById('status').className = 'status stopped';
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+
+            // Clear all data
+            timeData.length = 0;
+            vibrationData.length = 0;
+            temperatureData.length = 0;
+            pressureData.length = 0;
+            probabilityData.length = 0;
+            predictionData.length = 0;
+            degradationData.length = 0;
+
+            // Update all charts
+            [probabilityChart, vibrationChart, temperatureChart,
+                pressureChart, predictionChart, degradationChart].forEach(chart => {
+                    chart.update();
+                });
+        }
+
+        // Initialize with some data
+        for (let i = 0; i < 5; i++) {
+            timeData.push(timeStep++);
+            vibrationData.push(2.5 + Math.random() * 0.5);
+            temperatureData.push(70 + Math.random() * 5);
+            pressureData.push(5.3 + Math.random() * 0.3);
+            probabilityData.push(0);
+            predictionData.push({ x: i, y: 0 });
+            degradationData.push(0);
+        }
+
+        // Update charts initially
+        [probabilityChart, vibrationChart, temperatureChart,
+            pressureChart, predictionChart, degradationChart].forEach(chart => {
+                chart.update();
+            });
+    </script>
+</body>
+
+</html>

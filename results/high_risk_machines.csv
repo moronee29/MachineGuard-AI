@@ -1,0 +1,3 @@
+Machine_ID,Actual_Status,Predicted_Status,Failure_Probability,Risk_Level,Correct_Prediction
+MACHINE_066,Failure,Failure,0.9997801,High,True
+MACHINE_066,Failure,Failure,0.99828905,High,True

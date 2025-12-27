@@ -1,0 +1,10 @@
+pressure_rolling_avg
+vibration_rolling_avg
+temperature_rolling_avg
+temp_vib_interaction
+vibration
+temperature
+power_efficiency
+pressure
+torque
+power_consumption
